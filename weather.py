@@ -36,3 +36,4 @@ def WeatherDisplay():
 
     #print(f'{number}{ss[-1]} in celsius')
 
+WeatherDisplay()
