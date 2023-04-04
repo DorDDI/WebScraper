@@ -3,4 +3,9 @@ import requests
 import urllib.parse
 
 def SportsDisplay():
-    pass
+    google_url = "https://www.espn.com/nba/standings"
+    response = requests.get(google_url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    #print(soup.prettify())
+    temp = soup.find('span' ,class_='stat-cell').text
+    print(temp)
