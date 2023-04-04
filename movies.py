@@ -13,8 +13,9 @@ def MovieDisplay():
 
         if (options == 1):
             # search movie / seria name from imdb
-            name = input('enter movie / tv name ')
+            name = input('enter movie / tv name: ')
             res = imdb.search(name)
+
             a = res.split('{\n  "result_count":')[1].split('\n  "results":')
             numberofoptions = int(a[0][1])
             if numberofoptions == 0:
@@ -36,23 +37,16 @@ def MovieDisplay():
                 print(f"{count}. {optionsMovie[1]}")
                 count = count + 1
             choose = int(input())
-            res = imdb.get_by_id(a[choose-1][0][1:])
-            movieName = res.split("\"name\":")[1].split(",\n")[0].replace("\"", "")[1:]
-            movieTime = res.split("\"duration\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "")
-            movieactors = res.split("\"actor\":")[1].split("],\n")[0].split("\"name\"")[1:]
-            movieyear = res.split("\"datePublished\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "")
-            movieRate = res.split("\"rating\":")[1].split("\"ratingValue\":")[1].split("\n")[0].replace(" ", "")
-            movieGenre = res.split("\"genre\":")[1].split("],\n")[0].split("\n")
-            movieGenre = movieGenre[1:len(movieGenre)-1]
-            movieContentRate = res.split("\"contentRating\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "")
 
-            for i in range (len(movieactors)):
-                movieactors[i]=movieactors[i].split("\n")[0].replace("\"", "").replace(": ", "")
-            for i in range (len(movieGenre)):
-                movieGenre[i]=movieGenre[i].replace("\"", "").replace(" ", "")
-            print("\n\n")
-            print(f"Name: {movieName}, Duration: {movieTime}, Actors: {movieactors}, Year: {movieyear}, Rate: {movieRate}, Genre: {movieGenre}, Content Rate: {movieContentRate}")
-            print("\n\n")
+            res = imdb.get_by_id(a[choose-1][0][1:])
+
+            type = res.split("\"type\":")[1].split("\n")[0].replace("\"", "").replace(" ", "").replace(",", "")
+
+            if (type == "Movie"):
+                MovieOption(res)
+            else:
+                TVOption(res)
+
 
         elif(options == 2):
             # search person from imdb
@@ -74,6 +68,57 @@ def MovieDisplay():
             break
 
 
+
+def MovieOption(res):
+    movieName = res.split("\"name\":")[1].split(",\n")[0].replace("\"", "")[1:].replace("null", "TBD")
+    movieTime = res.split("\"duration\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "").replace("null", "TBD").replace("PT", "").replace("H", " Hours and ").replace("M", " Minutes")
+    movieactors = res.split("\"actor\":")[1].split("],\n")[0].split("\"name\"")[1:]
+    movieyear = res.split("\"datePublished\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "").replace("null",
+                                                                                                              "TBD")
+    movieRate = res.split("\"rating\":")[1].split("\"ratingValue\":")[1].split("\n")[0].replace(" ", "").replace("null",
+                                                                                                                 "TBD")
+    movieGenre = res.split("\"genre\":")[1].split("],\n")[0].split("\n")
+    movieGenre = movieGenre[1:len(movieGenre) - 1]
+    movieContentRate = res.split("\"contentRating\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "").replace(
+        "null", "TBD")
+    movieDescript = res.split("\"description\":")[1].split("],\n")[0].split("\n")[0][1:-1].replace("&apos;", "'").replace("\"", "")
+
+    for i in range(len(movieactors)):
+        movieactors[i] = movieactors[i].split("\n")[0].replace("\"", "").replace(": ", "").replace("null", "TBD")
+    for i in range(len(movieGenre)):
+        movieGenre[i] = movieGenre[i].replace("\"", "").replace(" ", "").replace("null", "TBD")
+    print("\n\n")
+    print(
+        f"Name: {movieName}, Duration: {movieTime}, Actors: {movieactors}, Year: {movieyear}, Rate: {movieRate}, Genre: {movieGenre}, Content Rate: {movieContentRate}")
+    print(f"\nDescription: {movieDescript}")
+    print("\n\n")
+
+def TVOption(res):
+    TVName = res.split("\"name\":")[1].split(",\n")[0].replace("\"", "")[1:].replace("null", "TBD")
+
+    TVactors = res.split("\"actor\":")[1].split("],\n")[0].split("\"name\"")[1:]
+    TVyear = res.split("\"datePublished\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "").replace("null",
+                                                                                                              "TBD")
+    TVRate = res.split("\"rating\":")[1].split("\"ratingValue\":")[1].split("\n")[0].replace(" ", "").replace("null",
+                                                                                                                 "TBD")
+    TVGenre = res.split("\"genre\":")[1].split("],\n")[0].split("\n")
+    TVGenre = TVGenre[1:len(TVGenre) - 1]
+    TVContentRate = res.split("\"contentRating\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "").replace(
+        "null", "TBD")
+    TVDescript = res.split("\"description\":")[1].split("],\n")[0].split("\n")
+
+    for i in range(len(TVactors)):
+        TVactors[i] = TVactors[i].split("\n")[0].replace("\"", "").replace(": ", "").replace("null", "TBD")
+    for i in range(len(TVGenre)):
+        TVGenre[i] = TVGenre[i].res.split("\"description\":")[1].split("],\n")[0].split("\n")[0][1:-1].replace("&apos;", "'").replace("\"", "")
+
+    print("\n\n")
+    print(
+        f"Name: {TVName}, Actors: {TVactors}, Year: {TVyear}, Rate: {TVRate}, Genre: {TVGenre}, Content Rate: {TVContentRate}")
+    print(f"\nDescription: {TVDescript}")
+    print("\n\n")
+
+    pass
 
 
 MovieDisplay()
