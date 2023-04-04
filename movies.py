@@ -4,6 +4,9 @@ import urllib.parse
 from PyMovieDb import IMDB
 def MovieDisplay():
     imdb = IMDB()
+    genreArr = ["All", "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary", "Drama",
+                "Family", "Fantasy", "Game-Show", "History", "Horror", "Music", "Musical", "Mystery", "News",
+                "Reality-TV", "Romance", "Sci-Fi", "Short", "Sport", "Talk-Show", "Thriller", "War", "Western"]
 
     while (1):
 
@@ -50,19 +53,55 @@ def MovieDisplay():
 
         elif(options == 2):
             # search person from imdb
-            res = imdb.person_by_name('Rajkummar Rao')
+            name = input('enter actor name: ')
+            res = imdb.search('Leonardo DiCaprio')
+
+            HEADERS = {
+                'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'}
+            url = "https://www.imdb.com/name/nm0000138"
+            result = requests.get(url, headers=HEADERS)
+            content = result.text
+
+            soup = BeautifulSoup(content, 'html.parser')
+            name = soup.find('div', class_='wob_loc q8U8x').get_text()
+
+
+            pass
 
         elif(options == 3):
             # returns top 50 popular movies starting from start id
-            res = imdb.popular_movies(genre=None, start_id=1, sort_by=None)
+
+            count = 1
+            print("choose genere by number:\n")
+            for i in range(len(genreArr)):
+                print(f"{count}. {genreArr[count - 1]}")
+                count = count + 1
+            chooseGenre = int(input())
+
+            genreArr[0] = "None"
+            res = imdb.popular_movies(genre=genreArr[chooseGenre-1], start_id=1, sort_by=None)
+            genreArr[0] = "All"
+            pass
 
         elif (options == 4):
             # returns top 50 popular TV Series starting from start id
-            res = imdb.popular_tv(genre=None, start_id=1, sort_by=None)
+
+
+            count = 1
+            print("choose genere by number:\n")
+            for i in range (len(genreArr)):
+                print(f"{count}. {genreArr[count-1]}")
+                count = count +1
+            chooseGenre = int(input())
+            genreArr[0] = "None"
+            res = imdb.popular_tv(genre=genreArr[chooseGenre-1], start_id=1, sort_by=None)
+            genreArr[0] = "All"
+            pass
 
         elif (options == 5):
             # upcoming movies from imdb
             res = imdb.upcoming(region=None)
+            pass
 
         else:
             break
