@@ -54,7 +54,7 @@ def MovieDisplay():
         elif(options == 2):
             # search person from imdb
             name = input('enter actor name: ')
-            res = imdb.search('Leonardo DiCaprio')
+            res = imdb.search('Leonardo DiCaprio', person=True)
 
             HEADERS = {
                 'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'}
@@ -85,6 +85,15 @@ def MovieDisplay():
 
         elif (options == 4):
             # returns top 50 popular TV Series starting from start id
+            print("choose genere by number:\n")
+            for i in range(len(genreArr)):
+                print(f"{count}. {genreArr[count - 1]}")
+                count = count + 1
+            chooseGenre = int(input())
+            genreArr[0] = "None"
+            res = imdb.popular_movies(genre=genreArr[chooseGenre-1], start_id=1, sort_by=None)
+            genreArr[0] = "All"
+            pass
 
 
             count = 1
@@ -158,6 +167,11 @@ def TVOption(res):
     print("\n\n")
 
     pass
+
+imdb = IMDB()
+#res = imdb.popular_tv(genre="Comedy", start_id=1, sort_by=None)
+
+#res = imdb.upcoming(region="Spain")
 
 
 MovieDisplay()
