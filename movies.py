@@ -53,17 +53,8 @@ def MovieDisplay():
 
         elif(options == 2):
             # search person from imdb
-            name = input('enter actor name: ')
-            res = imdb.search('Leonardo DiCaprio', person=True)
-
-            HEADERS = {
-                'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'}
-            url = "https://www.imdb.com/name/nm0000138"
-            result = requests.get(url, headers=HEADERS)
-            content = result.text
-
-            soup = BeautifulSoup(content, 'html.parser')
-            name = soup.find('div', class_='wob_loc q8U8x').get_text()
+            name = 'Leonardo dicaprio'
+            res= imdb.search( name, year=None, tv=False, person=True)
 
 
             pass
