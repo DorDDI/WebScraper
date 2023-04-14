@@ -5,6 +5,7 @@ import urllib.parse
 from PyMovieDb import IMDB
 from requests_html import HTMLSession
 
+
 """
 def __init__(self):
     self.session = HTMLSession()
@@ -30,6 +31,29 @@ search_results = {'result_count': 0, 'results': []}
 NA = json.dumps({"status": 404, "message": "No Result Found!", 'result_count': 0, 'results': []})
 
 
+def get(url):
+    """
+     @description:- helps to get a file's complete info (used by get_by_name() & get_by_id() )
+     @parameter:- <str:url>, url of the file/movie/tv-series.
+     @returns:- File/movie/TV info as JSON string.
+    """
+    response = session.get(url)
+    result = response.html.xpath("//script[@type='application/ld+json']")[0].text
+    result = ''.join(result.splitlines())  # removing newlines
+    result = f"""{result}"""
+    return result
+
+def get_by_id(file_id):
+    """
+     @description:- Helps to search a file/movie/tv by its imdb ID.
+     @parameter-1:- <str:file_id>, imdb ID of the file/movie/tv.
+     @returns:- File/movie/TV info as JSON string.
+    """
+    assert isinstance(file_id, str)
+    url = f"{baseURL}/title/{file_id}"
+    return get(url)
+
+
 def MovieDisplay():
     imdb = IMDB()
     genreArr = ["All", "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime", "Documentary", "Drama",
@@ -38,8 +62,8 @@ def MovieDisplay():
 
     while (1):
 
-        print('Movie Menu\n~~~~~~~~~~~~~~~\n1. search movie/tv by name \n2. search actor \n3. get the popular movies in spesific genre')
-        print('4. returns top 50 popular TV Series \n5. upcoming movies from imdb \n6. return')
+        print('Movie Menu\n~~~~~~~~~~~~~~~\n1. search movie/tv by name \n2. upcoming movies from imdb \n3. get the popular movies in spesific genre')
+        print('4. returns top 50 popular TV Series \n5. return')
         options = int(input('what do you want to do:'))
 
         if (options == 1):
@@ -69,9 +93,11 @@ def MovieDisplay():
                 count = count + 1
             choose = int(input())
 
-            res = imdb.get_by_id(a[choose-1][0][1:])
+            counttimes = 0
 
-            type = res.split("\"type\":")[1].split("\n")[0].replace("\"", "").replace(" ", "").replace(",", "")
+            res = get_by_id(a[choose-1][0][1:])
+
+            type = res.split("\"@type\":")[1].split(",")[0].replace('"',"")
 
             if (type == "Movie"):
                 MovieOption(res)
@@ -80,11 +106,10 @@ def MovieDisplay():
 
 
         elif(options == 2):
-            # search person from imdb
-            name = 'Leonardo dicaprio'
-            res= imdb.search( name, year=None, tv=False, person=True)
 
-
+            # upcoming movies from imdb
+            number = int(input("enter number of upcoming movies: "))
+            upcoming('US', number)
             pass
 
         elif(options == 3):
@@ -113,13 +138,6 @@ def MovieDisplay():
             genreArr[0] = "None"
             res = imdb.popular_tv(genre=genreArr[chooseGenre-1], start_id=1, sort_by=None)
             genreArr[0] = "All"
-            pass
-
-
-        elif (options == 5):
-            # upcoming movies from imdb
-            number = int(input("enter number of upcoming movies: "))
-            upcoming('US',number)
             pass
 
         else:
@@ -162,7 +180,11 @@ def upcoming(region=None,movienumber = 20):
                 detail = detail[1]
                 detail = detail.split('class="ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--no-wrap ipc-inline-list--inline ipc-metadata-list-summary-item__stl base" role="presentation"><li role="presentation" class="ipc-inline-list__item"><span ')
                 genre = detail[0].split('aria-disabled="false">')[1:]
-                actors = detail[1].split('</span></li></ul></div></div><div')[0].split('aria-disabled="false">')[1:]
+                actors = detail[1].split('</span></li></ul></div></div><div')
+                if len(actors) >1:
+                    actors = actors[0].split('aria-disabled="false">')[1:]
+                else:
+                    actors = "TBD"
                 for i in range (len(genre)):
                     genre[i]=genre[i].split('<')[0]
                 for i in range (len(actors)):
@@ -171,79 +193,75 @@ def upcoming(region=None,movienumber = 20):
             numberOfMovies = numberOfMovies+1
             if (numberOfMovies>movienumber):
                 break
+        print("\n")
 
         pass
 
-    h4 = div.find('h4')
-    ul = div.find('ul')
-    data = zip(h4, ul)
-    output = []
-    for zip_el in data:
-        rel_date = zip_el[0].text
-        ulist = zip_el[1].find('a')
-        for movie in ulist:
-            output.append({
-                'id': movie.attrs['href'].split('/')[2],
-                'name': movie.text,
-                'url': baseURL + movie.attrs['href'],
-                'release_data': rel_date
-            })
-    results = {'result_count': len(output), 'results': output}
-    if results['result_count'] > 0:
-        return json.dumps(results, indent=2)
-    else:
-        return NA
+
 
 def MovieOption(res):
-    movieName = res.split("\"name\":")[1].split(",\n")[0].replace("\"", "")[1:].replace("null", "TBD")
-    movieTime = res.split("\"duration\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "").replace("null", "TBD").replace("PT", "").replace("H", " Hours and ").replace("M", " Minutes")
-    movieactors = res.split("\"actor\":")[1].split("],\n")[0].split("\"name\"")[1:]
-    movieyear = res.split("\"datePublished\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "").replace("null",
-                                                                                                              "TBD")
-    movieRate = res.split("\"rating\":")[1].split("\"ratingValue\":")[1].split("\n")[0].replace(" ", "").replace("null",
-                                                                                                                 "TBD")
-    movieGenre = res.split("\"genre\":")[1].split("],\n")[0].split("\n")
-    movieGenre = movieGenre[1:len(movieGenre) - 1]
-    movieContentRate = res.split("\"contentRating\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "").replace(
-        "null", "TBD")
-    movieDescript = res.split("\"description\":")[1].split("],\n")[0].split("\n")[0][1:-1].replace("&apos;", "'").replace("\"", "")
+    movieName, movieyear, movieRate, movieGenre, movieContentRate, movieDescript, movieTime, movieactors = ValueUpdate(res,1)
 
-    for i in range(len(movieactors)):
-        movieactors[i] = movieactors[i].split("\n")[0].replace("\"", "").replace(": ", "").replace("null", "TBD")
-    for i in range(len(movieGenre)):
-        movieGenre[i] = movieGenre[i].replace("\"", "").replace(" ", "").replace("null", "TBD")
     print("\n\n")
     print(
-        f"Name: {movieName}, Duration: {movieTime}, Actors: {movieactors}, Year: {movieyear}, Rate: {movieRate}, Genre: {movieGenre}, Content Rate: {movieContentRate}")
+        f"Name: {movieName}\nDuration: {movieTime}\nActors: {movieactors}\nYear: {movieyear}\nRate: {movieRate}\nGenre: {movieGenre}\nContent Rate: {movieContentRate}")
     print(f"\nDescription: {movieDescript}")
     print("\n\n")
 
 def TVOption(res):
-    TVName = res.split("\"name\":")[1].split(",\n")[0].replace("\"", "")[1:].replace("null", "TBD")
-
-    TVactors = res.split("\"actor\":")[1].split("],\n")[0].split("\"name\"")[1:]
-    TVyear = res.split("\"datePublished\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "").replace("null",
-                                                                                                              "TBD")
-    TVRate = res.split("\"rating\":")[1].split("\"ratingValue\":")[1].split("\n")[0].replace(" ", "").replace("null",
-                                                                                                                 "TBD")
-    TVGenre = res.split("\"genre\":")[1].split("],\n")[0].split("\n")
-    TVGenre = TVGenre[1:len(TVGenre) - 1]
-    TVContentRate = res.split("\"contentRating\":")[1].split(",\n")[0].replace("\"", "").replace(" ", "").replace(
-        "null", "TBD")
-    TVDescript = res.split("\"description\":")[1].split("],\n")[0].split("\n")
-
-    for i in range(len(TVactors)):
-        TVactors[i] = TVactors[i].split("\n")[0].replace("\"", "").replace(": ", "").replace("null", "TBD")
-    for i in range(len(TVGenre)):
-        TVGenre[i] = TVGenre[i].res.split("\"description\":")[1].split("],\n")[0].split("\n")[0][1:-1].replace("&apos;", "'").replace("\"", "")
+    TVName, TVyear, TVRate, TVGenre, TVContentRate, TVDescript, TVactors = ValueUpdate(res,0)
 
     print("\n\n")
     print(
-        f"Name: {TVName}, Actors: {TVactors}, Year: {TVyear}, Rate: {TVRate}, Genre: {TVGenre}, Content Rate: {TVContentRate}")
+        f"Name: {TVName}\nActors: {TVactors}\nYear: {TVyear}\nRate: {TVRate}\nGenre: {TVGenre}\nContent Rate: {TVContentRate}")
     print(f"\nDescription: {TVDescript}")
     print("\n\n")
 
-    pass
+
+def ValueUpdate(res, type):
+    """
+
+    :param res:
+    :param type: 1 if movie, 0 if TV seria
+    :return:
+    """
+    name = res.split("\"name\":")[1].split(",")[0].replace("\"", "")
+
+    year = res.split("\"datePublished\":")[1].split(",\"director\"")[0].split(",")[0].replace("\"", "").replace(" ", "")
+    rate = res.split("\"ratingValue\":")
+    if len(rate)==1:
+        rate = "TBD"
+    elif  len(rate)<=2:
+        rate = rate[1].split("}")[0]
+    else:
+        rate = rate[2].split("}")[0]
+    genre = res.split("\"genre\":")[1].split("]")[0].replace("[","").replace("\"","").replace(",",", ")
+    ContentRate = res.split("\"contentRating\":")
+    if len(ContentRate)==1:
+        ContentRate = "TBD"
+    else:
+        ContentRate = ContentRate[1].split(",")[0].replace("\"","")
+
+    Descript = res.split("\"description\":")[1].split("\",\"genre\":")[0].split(",\"review\":")[0].replace("\"", "").replace("&apos;","'")
+
+    if type == 1:                                     #movie
+        duration = res.split("\"duration\":")
+        if len(duration) <= 2:
+            duration = "TBD"
+        else:
+            duration = duration[2].split(",")[0].replace("\"", "").replace("PT", "").replace("H", " Hours and ").replace(
+                "M", " Minutes").replace("}", "")
+        actor = res.split(",\"director\"")[0].split("\"actor\":")[1].split("\"name\"")[1:]
+        for i in range(len(actor)):
+            actor[i] = actor[i].split("}")[0].replace("\"", "").replace(":", "")
+        return name, year, rate, genre, ContentRate, Descript, duration, actor
+    else:                                           #TV seria
+        actor = res.split("}],\"creator\":[")[0].split("\"actor\":")[1].split("\"name\"")[1:]
+        for i in range(len(actor)):
+            actor[i] = actor[i].split("}")[0].replace("\"", "").replace(":", "")
+        return name, year, rate, genre, ContentRate, Descript, actor
+
+
 
 imdb = IMDB()
 #res = imdb.popular_tv(genre="Comedy", start_id=1, sort_by=None)
