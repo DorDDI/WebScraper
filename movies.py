@@ -1,10 +1,8 @@
-from bs4 import BeautifulSoup
 import json
 import requests
-import urllib.parse
 from PyMovieDb import IMDB
 from requests_html import HTMLSession
-
+import re
 
 """
 def __init__(self):
@@ -29,29 +27,6 @@ headers = {
 baseURL = "https://www.imdb.com"
 search_results = {'result_count': 0, 'results': []}
 NA = json.dumps({"status": 404, "message": "No Result Found!", 'result_count': 0, 'results': []})
-
-
-def get(url):
-    """
-     @description:- helps to get a file's complete info (used by get_by_name() & get_by_id() )
-     @parameter:- <str:url>, url of the file/movie/tv-series.
-     @returns:- File/movie/TV info as JSON string.
-    """
-    response = session.get(url)
-    result = response.html.xpath("//script[@type='application/ld+json']")[0].text
-    result = ''.join(result.splitlines())  # removing newlines
-    result = f"""{result}"""
-    return result
-
-def get_by_id(file_id):
-    """
-     @description:- Helps to search a file/movie/tv by its imdb ID.
-     @parameter-1:- <str:file_id>, imdb ID of the file/movie/tv.
-     @returns:- File/movie/TV info as JSON string.
-    """
-    assert isinstance(file_id, str)
-    url = f"{baseURL}/title/{file_id}"
-    return get(url)
 
 
 def MovieDisplay():
@@ -93,8 +68,6 @@ def MovieDisplay():
                 count = count + 1
             choose = int(input())
 
-            counttimes = 0
-
             res = get_by_id(a[choose-1][0][1:])
 
             type = res.split("\"@type\":")[1].split(",")[0].replace('"',"")
@@ -109,7 +82,7 @@ def MovieDisplay():
 
             # upcoming movies from imdb
             number = int(input("enter number of upcoming movies: "))
-            upcoming('US', number)
+            upcoming(number)
             pass
 
         elif(options == 3):
@@ -123,9 +96,18 @@ def MovieDisplay():
             chooseGenre = int(input())
 
             genreArr[0] = "None"
-            res = imdb.popular_movies(genre=genreArr[chooseGenre-1], start_id=1, sort_by=None)
+            numberofmovies = int(input("enter number of movies: "))
+            res = get_popular(1,genre=genreArr[chooseGenre-1], start_id=1, movienumber=numberofmovies)
             genreArr[0] = "All"
-            pass
+            counter = 1
+            for element in res["results"]:
+                print(f"{counter}. {(element['name'])}")
+                counter = counter +1
+            option = int(input("Enter 0 to return or movie number for details: "))
+            if (option!=0):
+                moviedetail = get_by_id(res['results'][option-1]['id'])
+                MovieOption(moviedetail)
+
 
         elif (options == 4):
             # returns top 50 popular TV Series starting from start id
@@ -136,26 +118,29 @@ def MovieDisplay():
                 count = count + 1
             chooseGenre = int(input())
             genreArr[0] = "None"
-            res = imdb.popular_tv(genre=genreArr[chooseGenre-1], start_id=1, sort_by=None)
+            numberofmovies = int(input("enter number of movies up to 50: "))
+            res = get_popular(2,genre=genreArr[chooseGenre-1], start_id=1, movienumber=numberofmovies)
             genreArr[0] = "All"
-            pass
+            counter = 1
+            for element in res["results"]:
+                print(f"{counter}. {(element['name'])}")
+                counter = counter +1
+            option = int(input("Enter 0 to return or movie number for details: "))
+            if (option!=0):
+                tvdetail = get_by_id(res['results'][option-1]['id'])
+                TVOption(tvdetail)
 
         else:
             break
 
-def upcoming(region=None,movienumber = 20):
+def upcoming(movienumber = 20):
     """
      @description:- Helps to get upcoming movies/tv-series.
      @parameter-1:- <str:region> OPTIONAL, country code (like US, IN etc.) to filter results by region/country.
      @returns:- upcoming movies/TV-Series info as JSON string.
     """
     numberOfMovies = 1
-    if region is not None:
-        assert isinstance(region, str)
-        url = f"https://www.imdb.com/calendar?region={region}"
-    else:
-        url = "https://www.imdb.com/calendar"
-
+    url = f"https://www.imdb.com/calendar?region=US"
     try:
         response = session.get(url)
     except requests.exceptions.ConnectionError as e:
@@ -175,16 +160,19 @@ def upcoming(region=None,movienumber = 20):
             detail = movie.split('<ul class="ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--no-wrap ipc-inline-list--inline ipc-metadata-list-summary-item__tl base" role="presentation">')
             if (len(detail) == 1):
                 genre = "TBD"
-                actors = "TBD"
+                actors = ["TBD"]
             else:
                 detail = detail[1]
                 detail = detail.split('class="ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--no-wrap ipc-inline-list--inline ipc-metadata-list-summary-item__stl base" role="presentation"><li role="presentation" class="ipc-inline-list__item"><span ')
                 genre = detail[0].split('aria-disabled="false">')[1:]
-                actors = detail[1].split('</span></li></ul></div></div><div')
-                if len(actors) >1:
-                    actors = actors[0].split('aria-disabled="false">')[1:]
+                if len(detail)!=1:
+                    actors = detail[1].split('</span></li></ul></div></div><div')
+                    if len(actors) > 1:
+                        actors = actors[0].split('aria-disabled="false">')[1:]
+                    else:
+                        actors = ["TBD"]
                 else:
-                    actors = "TBD"
+                    actors = ["TBD"]
                 for i in range (len(genre)):
                     genre[i]=genre[i].split('<')[0]
                 for i in range (len(actors)):
@@ -196,8 +184,6 @@ def upcoming(region=None,movienumber = 20):
         print("\n")
 
         pass
-
-
 
 def MovieOption(res):
     movieName, movieyear, movieRate, movieGenre, movieContentRate, movieDescript, movieTime, movieactors = ValueUpdate(res,1)
@@ -216,7 +202,6 @@ def TVOption(res):
         f"Name: {TVName}\nActors: {TVactors}\nYear: {TVyear}\nRate: {TVRate}\nGenre: {TVGenre}\nContent Rate: {TVContentRate}")
     print(f"\nDescription: {TVDescript}")
     print("\n\n")
-
 
 def ValueUpdate(res, type):
     """
@@ -261,15 +246,87 @@ def ValueUpdate(res, type):
             actor[i] = actor[i].split("}")[0].replace("\"", "").replace(":", "")
         return name, year, rate, genre, ContentRate, Descript, actor
 
+def get(url):
+    """
+     @description:- helps to get a file's complete info (used by get_by_name() & get_by_id() )
+     @parameter:- <str:url>, url of the file/movie/tv-series.
+     @returns:- File/movie/TV info as JSON string.
+    """
+    response = session.get(url)
+    result = response.html.xpath("//script[@type='application/ld+json']")[0].text
+    result = ''.join(result.splitlines())  # removing newlines
+    result = f"""{result}"""
+    return result
+
+def get_by_id(file_id):
+    """
+     @description:- Helps to search a file/movie/tv by its imdb ID.
+     @parameter-1:- <str:file_id>, imdb ID of the file/movie/tv.
+     @returns:- File/movie/TV info as JSON string.
+    """
+    assert isinstance(file_id, str)
+    url = f"{baseURL}/title/{file_id}"
+    return get(url)
 
 
-imdb = IMDB()
-#res = imdb.popular_tv(genre="Comedy", start_id=1, sort_by=None)
+def get_popular(type,genre=None, start_id=1,movienumber = 51):
+    """
+     @description:- Helps to search popular movies/TV-Series by url, (used by popular_movies() & popular_tv() ).
+     @parameter-1:- <str:url>, url to search.
+     @returns:- Files/Movies/TV-Series info as JSON string.
+    """
 
-#res = imdb.upcoming(region="Spain")
+    numberOfMovies = 1
+    if type == 1:
+        searh_type = "movie"         #movie
+    else:
+        searh_type = "tv_series,tv_miniseries"   #tv
+    assert isinstance(start_id, int)
+    if genre is not None:
+        assert isinstance(genre, str)
+        url = f"https://www.imdb.com/search/title/?title_type={searh_type}&genres={genre}&start={start_id}"
+    else:
+        url = f"https://www.imdb.com/search/title/?title_type={searh_type}&start={start_id}"
 
+    assert isinstance(url, str)
+    try:
+        response = session.get(url)
+    except requests.exceptions.ConnectionError as e:
+        response = session.get(url, verify=False)
 
-MovieDisplay()
+    links = response.html.xpath('//h3/a')
+    years = response.html.xpath("//h3")
 
+    if not bool(links) and bool(years):
+        return NA
+
+    output = []
+    for link, year in zip(links, years):
+        href = link.attrs.get('href', "#")
+        if 'title' in href:
+            # getting year
+            year = year.find('span', containing='(')[0] if bool(year.find('span', containing='(')) else "TBD"
+            if year != "TBD":
+                year = "".join(re.findall(r"\d+", year.text))
+            year = year[:4] + "-" + year[4:] if len(year) == 8 else year   # for TV
+            year = year if len(year) == 4 else year  # for movies
+
+            # getting poster
+            file_id = href.split('/')[2]
+            poster = response.html.xpath(f"//img[@data-tconst='{file_id}']")
+            poster = poster[0].attrs.get('loadlate', 'image_not_found') if bool(poster) else 'image_not_found'
+            # creating file object
+            output.append({
+                'id': file_id,
+                'name': link.text,
+                'year': year,
+                'url': baseURL + href,
+                'poster': poster
+            })
+            numberOfMovies = numberOfMovies+1
+        if (numberOfMovies > movienumber):
+            break
+    search_results = {'result_count': len(output), 'results': output}
+    return search_results
 
 

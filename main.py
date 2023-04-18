@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import urllib.parse
-from weather import WeatherDisplay
+from weather import Weather
 from sports import SportsDisplay
 from movies import MovieDisplay
 from flight import FlightDisplay
@@ -14,13 +14,15 @@ while(1):
     if (section == 1):
         MovieDisplay()
     elif (section == 2):
-        WeatherDisplay()
+        weather = Weather()
+        weather.WeatherDisplay()
     elif (section == 3):
         FlightDisplay()
     elif (section == 4):
         SportsDisplay()
     elif (section == 8):
         break
+    print("\n")
 
 
 
