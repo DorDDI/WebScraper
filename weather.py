@@ -2,9 +2,10 @@ from bs4 import BeautifulSoup
 import requests
 import urllib.parse
 
+
 class Weather:
 
-    def WeatherDisplay(self):
+    def weather_display(self):
         # Take input from the user
         input_string = input("Enter a string: ")
 
