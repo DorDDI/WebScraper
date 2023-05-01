@@ -188,4 +188,4 @@ def SportsDisplay():
         elif (section == 4):
             break
 
-SportsDisplay()
+
